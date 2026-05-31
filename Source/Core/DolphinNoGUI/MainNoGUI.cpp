@@ -25,6 +25,7 @@
 #include "Core/DolphinAnalytics.h"
 #include "Core/Host.h"
 #include "Core/System.h"
+#include "Scripting/ScriptingEngine.h"
 
 #include "UICommon/CommandLineParse.h"
 #ifdef USE_DISCORD_PRESENCE
@@ -274,6 +275,13 @@ int main(int argc, char* argv[])
     return 0;
   }
 
+  std::optional<std::string> script_filepath;
+  if (options.is_set("script"))
+    script_filepath = static_cast<const char*>(options.get("script"));
+
+  if (options.get("no_python_subinterpreters"))
+    Scripting::ScriptingBackend::DisablePythonSubinterpreters();
+
   std::string user_directory;
   if (options.is_set("user"))
     user_directory = static_cast<const char*>(options.get("user"));
@@ -327,6 +335,10 @@ int main(int argc, char* argv[])
     fprintf(stderr, "Could not boot the specified file\n");
     return 1;
   }
+
+  std::optional<Scripting::ScriptingBackend> scripting_backend;
+  if (script_filepath.has_value())
+    scripting_backend.emplace(std::move(*script_filepath));
 
 #ifdef USE_DISCORD_PRESENCE
   Discord::UpdateDiscordPresence();
